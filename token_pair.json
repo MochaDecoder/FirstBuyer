@@ -1,0 +1,15 @@
+{
+    "watching":
+        [
+            {
+                "token": "0x646Cf218b3dC2d6061f599fC4fd792AA4aC76Bf2",
+                "token_name": "NOOB",
+                "token_pair": "0xB37c61e94a5e0f79143b10f279b2e0c812dd4e6e"
+            },
+            {
+                "token": "0x79195af3587B242F23044a29AE2Ca54A3223BFC2",
+                "token_name": "KEK",
+                "token_pair": "0xB08E5584EDE94C455e6a9E708C478b52Bc812E44"
+            }
+        ]
+}
