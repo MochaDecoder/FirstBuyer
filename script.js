@@ -1,17 +1,18 @@
 import axios from 'axios';
 import { ethers } from 'ethers';
+import * as dotenv from 'dotenv'; // see https://github.com/motdotla/dotenv#how-do-i-use-dotenv-with-import
 import data from './token_pair.json' assert { type: 'json' };
 
-const apiKey = '';
+dotenv.config();
 
-// const etherscanUrl = `https://api.etherscan.io/api?module=account&action=tokentx&contractaddress=${tokenAddress}&startblock=0&endblock=99999999&sort=asc&apikey=${apiKey}`;
-const buyerList = ['0x35da5896a0c309a47220f8b1B13169A5bB145874'];
+const buyerList = [];
+const tokenList = data.eth;
 
 async function findFirstBuyer() {
     try {
-        for (let i = 0; i < data.watching.length; i++) {
-            let etherscanUrl = `https://api.etherscan.io/api?module=account&action=tokentx&contractaddress=${data.watching[i].token}&startblock=0&endblock=99999999&sort=asc&apikey=${apiKey}`;
-            const response = await axios.get(etherscanUrl);
+        for (let i = 0; i < tokenList.watching.length; i++) {
+            let scanUrl = `https://api.etherscan.io/api?module=account&action=tokentx&contractaddress=${tokenList.watching[i].token_address}&startblock=0&endblock=99999999&sort=asc&apikey=${process.env.API_KEY_ETH}`;
+            const response = await axios.get(scanUrl);
             const transactions = response.data.result;
 
             if (transactions.length === 0) {
@@ -19,43 +20,44 @@ async function findFirstBuyer() {
                 return;
             }
 
-            for (let j = 0; j < 20; j++) {
+            for (let j = 0; j < 100; j++) {
                 if (
                     transactions[j].from.toLowerCase() ===
-                    data.watching[i].token_pair.toLowerCase()
+                    tokenList.watching[i].token_pair.toLowerCase()
                 ) {
-                    console.log({
-                        token: data.watching[i].token_name,
-                        from: transactions[j].to,
-                        value: transactions[j].value / 100000000,
+                    saveBuyerList({
+                        token: tokenList.watching[i].token_name,
+                        from: transactions[j].to.toLowerCase(),
                     });
-
-                    saveBuyerList(transactions[j].to);
                 }
             }
         }
         const result = findDuplicateBuyer(buyerList);
+        // console.log(buyerList);
         console.log(result);
-
-        // console.log('First buyer found:', firstTransaction.from);
     } catch (error) {
         console.error('Error fetching transaction data:', error.message);
     }
 }
 
 function saveBuyerList(buyer) {
-    buyerList.push(buyer);
+    const index = buyerList.findIndex(
+        b => b.token === buyer.token && b.from === buyer.from
+    );
+    if (index === -1) {
+        buyerList.push(buyer);
+    }
 }
 
 function findDuplicateBuyer(buyerList) {
-    let sorted_arr = buyerList.slice().sort(); // You can define the comparing function here.
-    // JS by default uses a crappy string compare.
-    // (we use slice to clone the array so the
-    // original array won't be modified)
+    const newBuyerList = buyerList.map(b => b.from);
+    let sorted_arr = newBuyerList.slice().sort(); // You can define the comparing function here.
+
     let results = [];
     for (let i = 0; i < sorted_arr.length - 1; i++) {
-        if (sorted_arr[i + 1].toLowerCase() == sorted_arr[i].toLowerCase()) {
-            results.push(sorted_arr[i]);
+        if (sorted_arr[i + 1] === sorted_arr[i]) {
+            if (results.indexOf(sorted_arr[i]) === -1)
+                results.push(sorted_arr[i]);
         }
     }
     return results;
